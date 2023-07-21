@@ -1,0 +1,41 @@
+version: '3.8'
+
+networks:
+  int:
+    driver: overlay
+    attachable: false
+    internal: true
+  ext:
+    driver: overlay
+
+services:
+  lilypond_web:
+    image: lilypond-web
+    networks:
+      - int
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 500M
+
+  discord_lilypond:
+    image: discord-lilypond
+    networks:
+      - ext
+    environment:
+      - TOKEN=<>
+      - CLIENT_ID=<>
+      - ENDPOINT=http://lily_proxy
+
+  lily_proxy:
+    image: docker-hub-registry.lan.dot-asterisk.nl/library/nginx:alpine
+    networks:
+      - int
+      - ext
+    volumes:
+      - /srv/docker/discord/nginx.conf:/etc/nginx/nginx.conf:ro
