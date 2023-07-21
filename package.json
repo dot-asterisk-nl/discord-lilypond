@@ -2,7 +2,7 @@
   "dependencies": {
     "discord.js": "^14.11.0"
   },
-  "name": "lilypond-discord",
+  "name": "discord-lilypond",
   "version": "0.9-dev",
   "description": "Lilypond bot for Discord",
   "main": "index.js",
