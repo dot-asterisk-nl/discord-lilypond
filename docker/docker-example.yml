@@ -33,7 +33,7 @@ services:
       - ENDPOINT=http://lily_proxy
 
   lily_proxy:
-    image: docker-hub-registry.lan.dot-asterisk.nl/library/nginx:alpine
+    image: nginx:alpine
     networks:
       - int
       - ext
