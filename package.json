@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "discord.js": "^14.11.0"
+  },
+  "name": "lilypond-discord",
+  "version": "0.9-dev",
+  "description": "Lilypond bot for Discord",
+  "main": "index.js",
+  "scripts": {
+  },
+  "author": "DOT-ASTERISK",
+  "license": "CC-BY-NC",
+  "type": "module"
+}
