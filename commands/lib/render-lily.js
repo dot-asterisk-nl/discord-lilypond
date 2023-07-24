@@ -1,7 +1,7 @@
 import {templates} from "../templates/lily-templates.js";
 import {config} from "../../config.js";
 import {confirmButtons} from "../../buttons.js";
-
+import sharp from 'sharp';
 const toFormEncoded = (params) => Object.keys(params).map((key) => {
     return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
 }).join('&');
@@ -19,7 +19,6 @@ const logLily = (user, code) => {
         + "-----\n"
     console.log(logMessage)
 }
-
 export const renderLily = async (interaction, code, full) => {
     await interaction.reply("...")
 
@@ -40,14 +39,23 @@ export const renderLily = async (interaction, code, full) => {
     }
 
     try {
-        const pngBytes = await fetch(config.endpoint, createRequestParams(lily, "png")).then(catchErr).then(response => response.body);
+
+        const pngRawBytes = await fetch(config.endpoint, createRequestParams(lily, "png")).then(catchErr).then(response => response.arrayBuffer())
+        const image = sharp(pngRawBytes)
+        const pngBytes = await image
+            .extend({
+                top: 100, bottom: 100, left: 100, right: 100,
+                background: { r: 255, g: 255, b: 255, alpha: 255 }
+            }).toBuffer()
+
         const mp3Bytes = await fetch(config.endpoint, createRequestParams(lily, "mp3")).then(catchErr).then(response => response.body);
         clearInterval(messageInterval);
         const response = await interaction.editReply({content: "", files: [{attachment: pngBytes, name: 'output.png'}, {attachment: mp3Bytes, name: 'output.mp3'}], components: [confirmButtons]});
 
-        try{
-            const confirmation = await response.awaitMessageComponent({ time: 60_000 });
+        const collectorFilter = i => i.user.id === interaction.user.id;
 
+        try{
+            const confirmation = await response.awaitMessageComponent({ time: 60_000, filter: collectorFilter });
             if (confirmation.customId === 'confirm') {
                 await confirmation.update({ content: ` `, components: [] });
             } else if (confirmation.customId === 'delete') {
@@ -61,7 +69,11 @@ export const renderLily = async (interaction, code, full) => {
         clearInterval(messageInterval);
         console.error(e)
         if(e.message === "400"){
-            await interaction.editReply({content: ":warning: Error! Your lilypond code is invalid. You can use services like https://hacklily.org or install Frescobaldi."})
+            await interaction.editReply({
+                content:
+                    ":warning: Error! Your lilypond code is invalid, has an unsupported \\version or took longer than 5 seconds to generate.\n" +
+                    "You can use <https://hacklily.org> or install [Frescobaldi](<https://www.frescobaldi.org/download>) to check your code."
+            })
         } else {
             await interaction.editReply({content: ":warning: **Internal Server Error**"})
         }

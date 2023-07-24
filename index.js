@@ -18,6 +18,7 @@ client.once(Events.ClientReady, c => {
 client.on('interactionCreate', async interaction => {
     // Does nothing when no commandIndex and not from a server
     if (!interaction.isChatInputCommand()) return;
+
     if (config.flags.SERVER_ONLY && !interaction.guild){
         interaction.reply("This bot only supports being used from servers.");
         return;
