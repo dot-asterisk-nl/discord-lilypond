@@ -1,4 +1,4 @@
-FROM docker-hub-registry.lan.dot-asterisk.nl/library/node:alpine
+FROM library/node:alpine
 LABEL maintainer="marcel@dot-asterisk.nl"
 
 WORKDIR /app

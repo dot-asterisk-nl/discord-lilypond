@@ -3,7 +3,7 @@ import {renderLily} from "./lib/render-lily.js";
 
 export const renderLilySimple = async (interaction) => {
     const code = interaction.options.getString("code");
-    await renderLily(interaction, code, false)
+    await renderLily(interaction, code, "simple")
 }
 export const renderLilyFull = async (interaction) => {
     const modal = new ModalBuilder()
@@ -22,7 +22,7 @@ export const renderLilyFull = async (interaction) => {
     const modalInteraction = await interaction.awaitModalSubmit({time: 60_000})
 
     const code = modalInteraction.fields.getTextInputValue("score")
-    await renderLily(modalInteraction, code, true)
+    await renderLily(modalInteraction, code, "full")
 
 }
 export const renderLilyFile = async (interaction) => {
@@ -32,5 +32,5 @@ export const renderLilyFile = async (interaction) => {
     const response = await fetch(stream)
     const code = await response.text()
 
-    await renderLily(interaction, code, true)
+    await renderLily(interaction, code, "file")
 }

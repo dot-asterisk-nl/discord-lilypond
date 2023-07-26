@@ -1,6 +1,7 @@
 import {config} from "../../config.js";
 import sharp from "sharp";
 
+
 export class LilyWebError extends Error {
     constructor(type, message) {
         super(message);
@@ -40,7 +41,8 @@ export const fetchLilyRenders = async (lily) => {
         .then(response => ({length: response.headers.get("content-length"), body: response.body}))
         .then(res => res.length > 255 ? {attachment: res.body, name: 'output.mp3'} : null)
 
-    // Quick maffs to exclude MP3 if too small (empty).
-    // The reply function only accepts valid file objects.
-    return await Promise.all([pngAttachmentPromise, mp3AttachmentPromise]).then(a => a[1] ? a : [a[0]]);
+
+    return await Promise.all([pngAttachmentPromise, mp3AttachmentPromise])
+        .then(a => a[1] ? a : [a[0]]) // Quick maffs to exclude MP3 if too small (empty).
+                                                    // The reply function only accepts valid file objects.
 }

@@ -50,7 +50,7 @@ const processConfirmButtons = async (interaction, buttons) => {
         const collectorFilter = i => i.user.id === interaction.user.id;
         const confirmation = await buttons.awaitMessageComponent({ time: 60_000, filter: collectorFilter });
         if (confirmation.customId === 'confirm') {
-            await confirmation.update({ content: ` `, components: [] });
+            await confirmation.update({ components: [] });
         } else if (confirmation.customId === 'delete') {
             await interaction.deleteReply()
         }
@@ -59,16 +59,19 @@ const processConfirmButtons = async (interaction, buttons) => {
         await interaction.editReply({components: []})
     }
 }
-export const renderLily = async (interaction, code, full) => {
+export const renderLily = async (interaction, commandCode, type) => {
 
     const loadingMessageInterval = await startLoadingMessageInterval(interaction);
-    logLily(interaction.user, code)
-    const lily = !full ? templates.lilySimple(code) : templates.lilyFull(code);
+    logLily(interaction.user, commandCode)
+    const lily = type === "simple"? templates.lilySimple(commandCode) : templates.lilyFull(commandCode);
 
     try {
         const files = await fetchLilyRenders(lily);
+        const showLily = type === "simple" && commandCode.length < 500;
+        const content = showLily ? "Source: `" + commandCode + "`" : "";
+
         clearInterval(loadingMessageInterval);
-        const buttons = await interaction.editReply({content: "", files, components: [confirmButtons]});
+        const buttons = await interaction.editReply({content, files, components: [confirmButtons]});
         await processConfirmButtons(interaction, buttons);
     } catch (e) {
         clearInterval(loadingMessageInterval);
