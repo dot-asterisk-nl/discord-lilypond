@@ -1,9 +1,16 @@
 import {config} from "../../config.js";
 import sharp from "sharp";
 
-const catchPromiseErr = (response) => {
+export class LilyWebError extends Error {
+    constructor(type, message) {
+        super(message);
+        this.type = type;
+    }
+
+}
+const catchPromiseErr = async (response) => {
     if(!response.ok) {
-        throw new Error("RENDERING_ERROR")
+        throw new LilyWebError(response.headers.get('X-Error-Type'.toLowerCase()), await response.text())
     }
     return response
 }
@@ -19,7 +26,7 @@ const toFormEncoded = (params) => Object.keys(params).map((key) => {
 }).join('&');
 
 export const fetchLilyRenders = async (lily) => {
-    const pngBytesPromise = fetch(config.endpoint, createRequestParams(lily, "png"))
+    const pngAttachmentPromise = fetch(config.endpoint, createRequestParams(lily, "png"))
         .then(catchPromiseErr)
         .then(response => response.arrayBuffer())
         .then(buffer => sharp(buffer).extend({
@@ -28,10 +35,12 @@ export const fetchLilyRenders = async (lily) => {
         }).toBuffer())
         .then(buf => ({attachment: buf, name: 'output.png'}))
 
-    const mp3BytesPromise = fetch(config.endpoint, createRequestParams(lily, "mp3"))
+    const mp3AttachmentPromise = fetch(config.endpoint, createRequestParams(lily, "mp3"))
         .then(catchPromiseErr)
-        .then(response => response.body)
-        .then(buf => ({attachment: buf, name: 'output.mp3'}));
+        .then(response => ({length: response.headers.get("content-length"), body: response.body}))
+        .then(res => res.length > 255 ? {attachment: res.body, name: 'output.mp3'} : null)
 
-    return await Promise.all([mp3BytesPromise, pngBytesPromise]);
+    // Quick maffs to exclude MP3 if too small (empty).
+    // The reply function only accepts valid file objects.
+    return await Promise.all([pngAttachmentPromise, mp3AttachmentPromise]).then(a => a[1] ? a : [a[0]]);
 }

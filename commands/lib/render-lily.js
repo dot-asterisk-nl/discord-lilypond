@@ -1,5 +1,5 @@
 import {templates} from "../templates/lily-templates.js";
-import {confirmButtons} from "../../buttons.js";
+import {confirmButtons} from "../buttons.js";
 import {fetchLilyRenders} from "./fetch-lily.js";
 
 const logLily = (user, code) => {
@@ -22,18 +22,29 @@ const startLoadingMessageInterval = async (interaction) => {
 }
 
 const handleError = async (e, interaction) => {
-    console.error(e)
-    if(e.message === "RENDERING_ERROR"){
-        await interaction.editReply({
-            content:
-                ":warning: Error! Your lilypond code is invalid, has an unsupported `\\version` or took longer than 5 seconds to generate.\n" +
-                "You can use <https://hacklily.org> or install [Frescobaldi](<https://www.frescobaldi.org/download>) to check your code."
-        })
-    } else {
-        await interaction.editReply({content: ":warning: **Internal Server Error**"})
+    const errToReply = async (prefix, text) => {
+        await interaction.followUp({content: prefix, files: [{attachment: Buffer.from(text, "utf-8"), name: "error.txt"}], ephemeral: true});
     }
-}
 
+    if(e.type === "LilypondException"){
+        const prefix =
+            ":warning: Error! Your lilypond code is invalid, has an unsupported `\\version` or took longer than 5 seconds to generate.\n" +
+            "You can use <https://hacklily.org> or install [Frescobaldi](<https://www.frescobaldi.org/download>) to check your code.\n\n";
+
+        await errToReply(prefix, e.message)
+    } else if (e.type === "TimidityException") {
+        const prefix =
+            ":warning: Error! Could not create music from lilypond-generated midi!\n" +
+            "Check if you have \\midi{} in your \\score{}. \n\n";
+
+        await errToReply(prefix, e.message);
+    } else {
+        console.error(e);
+        await interaction.followUp({content: ":warning: **Internal Server Error**", ephemeral: true})
+    }
+
+    await interaction.deleteReply()
+}
 const processConfirmButtons = async (interaction, buttons) => {
     try{
         const collectorFilter = i => i.user.id === interaction.user.id;
@@ -48,7 +59,6 @@ const processConfirmButtons = async (interaction, buttons) => {
         await interaction.editReply({components: []})
     }
 }
-
 export const renderLily = async (interaction, code, full) => {
 
     const loadingMessageInterval = await startLoadingMessageInterval(interaction);
